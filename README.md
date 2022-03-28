@@ -1,18 +1,15 @@
-# purescript-quickcheck
+# purescript-generate-values
 
-[![Latest release](http://img.shields.io/github/release/purescript/purescript-quickcheck.svg)](https://github.com/purescript/purescript-quickcheck/releases)
-[![Build status](https://github.com/purescript/purescript-quickcheck/workflows/CI/badge.svg?branch=master)](https://github.com/purescript/purescript-quickcheck/actions?query=workflow%3ACI+branch%3Amaster)
-[![Pursuit](https://pursuit.purescript.org/packages/purescript-quickcheck/badge)](https://pursuit.purescript.org/packages/purescript-quickcheck)
-
-An implementation of QuickCheck in PureScript.
+Generate random values. This project was originally forked from [`purescript-quickcheck`](https://github.com/purescript/purescript-quickcheck) due to
+1. discoverability issues - when trying to generate random values, quickcheck isn't necessarily what one thinks of.
+2. enabling generation with effects - `Gen` could not be run in another monad. This library re-exposes that as `GenT`.
 
 ## Installation
 
 ```
-spago install quickcheck
+spago install generate-values
 ```
 
 ## Documentation
 
-- [Guide](GUIDE.md)
-- Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-quickcheck).
+- Module documentation is [published on Pursuit](http://pursuit.purescript.org/packages/purescript-generate-values).
