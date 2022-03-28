@@ -1,0 +1,33 @@
+{ name = "generate-values"
+, dependencies =
+  [ "arrays"
+  , "console"
+  , "control"
+  , "effect"
+  , "either"
+  , "enums"
+  , "exceptions"
+  , "foldable-traversable"
+  , "gen"
+  , "identity"
+  , "integers"
+  , "lazy"
+  , "lcg"
+  , "lists"
+  , "maybe"
+  , "newtype"
+  , "nonempty"
+  , "numbers"
+  , "partial"
+  , "prelude"
+  , "record"
+  , "st"
+  , "strings"
+  , "tailrec"
+  , "transformers"
+  , "tuples"
+  , "unfoldable"
+  ]
+, packages = ./packages.dhall
+, sources = [ "src/**/*.purs" ]
+}
