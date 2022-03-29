@@ -100,17 +100,19 @@ instance Monad m => MonadGen (GenT m) where
 runGenT :: forall m a. GenT m a -> GenState -> m (Tuple a GenState)
 runGenT gen s = runStateT (runGenT' gen) s
 
--- | Exposes the underlying StateT implementation.
+-- | Exposes the underlying `StateT` implementation.
 runGenT' :: forall m a. GenT m a -> StateT GenState m a
 runGenT' (GenT st) = st
 
--- | Run a random generator, keeping only the randomly-generated result
+-- | Modify the final state in a `GenT` monad action.
 withGenT :: forall m a. (GenState -> GenState) -> GenT m a -> GenT m a
 withGenT f = GenT <<< withStateT f <<< runGenT'
 
+-- | Change the type of the result in a `GenT` action
 mapGenT :: forall m1 m2 a b. (m1 (Tuple a GenState) -> m2 (Tuple b GenState)) -> GenT m1 a -> GenT m2 b
 mapGenT f = GenT <<< mapStateT f <<< runGenT'
 
+-- | Run a random generator, keeping only the generator state.
 execGenT :: forall m a. Functor m => GenT m a -> GenState -> m GenState
 execGenT = execStateT <<< runGenT'
 
@@ -130,13 +132,15 @@ type Gen a = GenT Identity a
 runGen :: forall a. Gen a -> GenState -> Tuple a GenState
 runGen = runState <<< runGenT'
 
--- | Run a random generator, keeping only the randomly-generated result
+-- | Modify the final state in a `Gen` action.
 withGen :: forall a. (GenState -> GenState) -> Gen a -> Gen a
 withGen f = GenT <<< withState f <<< runGenT'
 
+-- | Change the type of the result in a `Gen` action
 mapGen :: forall a b. (Tuple a GenState -> Tuple b GenState) -> Gen a -> Gen b
 mapGen f = GenT <<< mapState f <<< runGenT'
 
+-- | Run a random generator, keeping only the generator state.
 execGen :: forall a. Gen a -> GenState -> GenState
 execGen = execState <<< runGenT'
 
