@@ -1,8 +1,7 @@
 -- | This module defines the random generator monad used by the `Test.QuickCheck`
 -- | module, as well as helper functions for constructing random generators.
 module Control.Monad.Gen.Trans
-  ( Size
-  , GenState
+  ( GenState
   , GenT
   , runGenT
   , runGenT'
@@ -68,12 +67,13 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Partial.Unsafe (unsafePartial)
 import Random.LCG (Seed, lcgPerturb, lcgM, lcgNext, unSeed, randomSeed)
 
+-- | The state of the random generator monad
+-- |
+-- | ## The `size` label
+-- |
 -- | Tests are parameterized by the `Size` of the randomly-generated data,
 -- | the meaning of which depends on the particular generator used.
-type Size = Int
-
--- | The state of the random generator monad
-type GenState = { newSeed :: Seed, size :: Size }
+type GenState = { newSeed :: Seed, size :: Int }
 
 -- | The random generator monad
 -- |
@@ -171,11 +171,11 @@ suchThat gen pred = tailRecM go unit
     pure if pred a then Done a else Loop unit
 
 -- | Create a random generator which depends on the size parameter.
-sized :: forall m a. (Size -> GenT m a) -> GenT m a
+sized :: forall m a. (Int -> GenT m a) -> GenT m a
 sized f = stateful (\s -> f s.size)
 
 -- | Modify a random generator by setting a new size parameter.
-resize :: forall m a. Monad m => Size -> GenT m a -> GenT m a
+resize :: forall m a. Monad m => Int -> GenT m a -> GenT m a
 resize sz g = GenT $ StateT \{ newSeed, size } ->
   (map _ {size = size} ) <$> runGenT g { newSeed, size: sz}
 
@@ -288,7 +288,7 @@ shuffle xs = do
   pure (map snd (sortBy (comparing fst) (zip ns xs)))
 
 -- | Sample a random generator
-sample :: forall m a. MonadRec m => Seed -> Size -> GenT m a -> m (Array a)
+sample :: forall m a. MonadRec m => Seed -> Int -> GenT m a -> m (Array a)
 sample seed sz g = evalGenT (vectorOf sz g) { newSeed: seed, size: sz }
 
 -- | Generate a single value using a randomly generated seed.
@@ -298,7 +298,7 @@ randomSampleOne gen = do
   evalGenT gen { newSeed: seed, size: 10 }
 
 -- | Sample a random generator, using a randomly generated seed
-randomSample' :: forall m a. MonadRec m => MonadEffect m => Size -> GenT m a -> m (Array a)
+randomSample' :: forall m a. MonadRec m => MonadEffect m => Int -> GenT m a -> m (Array a)
 randomSample' n g = do
   seed <- liftEffect randomSeed
   sample seed n g
