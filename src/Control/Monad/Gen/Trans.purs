@@ -10,6 +10,7 @@ module Control.Monad.Gen.Trans
   , execGenT
   , evalGenT
   , perturbGenT
+  , resizeGenT
   , Gen
   , runGen
   , withGen
@@ -17,12 +18,12 @@ module Control.Monad.Gen.Trans
   , execGen
   , evalGen
   , perturbGen
+  , resizeGen
   -- , repeatable
   , stateful
   , variant
   , suchThat
   , sized
-  , resize
   , choose
   , chooseInt
   , oneOf
@@ -93,7 +94,7 @@ instance Monad m => MonadGen (GenT m) where
   chooseInt = chooseInt
   chooseFloat = choose
   chooseBool = (_ < 0.5) <$> uniform
-  resize f g = sized \s -> resize (f s) g
+  resize f g = sized \s -> resizeGenT (f s) g
   sized = sized
 
 -- | Exposes the underlying function.
@@ -126,6 +127,11 @@ perturbGenT n gen = GenT do
   modify_ \s -> s { newSeed = lcgPerturb (float32ToInt32 n) s.newSeed }
   runGenT' gen
 
+-- | Modify a random generator by setting a new size parameter.
+resizeGenT :: forall m a. Monad m => Int -> GenT m a -> GenT m a
+resizeGenT sz g = GenT $ StateT \{ newSeed, size } ->
+  (map _ {size = size} ) <$> runGenT g { newSeed, size: sz}
+
 type Gen a = GenT Identity a
 
 -- | Run a random generator
@@ -152,6 +158,10 @@ evalGen = evalState <<< runGenT'
 perturbGen :: forall m a. Monad m => Number -> Gen a -> Gen a
 perturbGen = perturbGenT
 
+-- | Modify a random generator by setting a new size parameter.
+resizeGen :: forall a. Int -> Gen a -> Gen a
+resizeGen = resizeGenT
+
 -- | Create a random generator for a function type.
 -- repeatable :: forall m a b. (a -> GenT m b) -> GenT m (a -> b)
 -- repeatable f = GenT $ state \s -> Tuple (\a -> fst (runGenT (f a) s)) (s { newSeed = lcgNext s.newSeed })
@@ -177,11 +187,6 @@ suchThat gen pred = tailRecM go unit
 -- | Create a random generator which depends on the size parameter.
 sized :: forall m a. (Int -> GenT m a) -> GenT m a
 sized f = stateful (\s -> f s.size)
-
--- | Modify a random generator by setting a new size parameter.
-resize :: forall m a. Monad m => Int -> GenT m a -> GenT m a
-resize sz g = GenT $ StateT \{ newSeed, size } ->
-  (map _ {size = size} ) <$> runGenT g { newSeed, size: sz}
 
 -- | Create a random generator which samples a range of `Number`s i
 -- | with uniform probability.
