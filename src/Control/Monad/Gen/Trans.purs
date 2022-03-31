@@ -19,7 +19,7 @@ module Control.Monad.Gen.Trans
   , evalGen
   , perturbGen
   , resizeGen
-  -- , repeatable
+  , repeatable
   , stateful
   , variant
   , suchThat
@@ -163,8 +163,9 @@ resizeGen :: forall a. Int -> Gen a -> Gen a
 resizeGen = resizeGenT
 
 -- | Create a random generator for a function type.
--- repeatable :: forall m a b. (a -> GenT m b) -> GenT m (a -> b)
--- repeatable f = GenT $ state \s -> Tuple (\a -> fst (runGenT (f a) s)) (s { newSeed = lcgNext s.newSeed })
+repeatable :: forall m a b. Monad m => (a -> Gen b) -> GenT m (a -> b)
+repeatable f = GenT $ StateT \s ->
+  pure $ Tuple (\a -> evalGen (f a) s) (s { newSeed = lcgNext s.newSeed })
 
 -- | Create a random generator which uses the generator state explicitly.
 stateful :: forall m a. (GenState -> GenT m a) -> GenT m a
