@@ -1,5 +1,13 @@
--- | This module defines the random generator monad used by the `Test.QuickCheck`
--- | module, as well as helper functions for constructing random generators.
+-- | This module defines the random generator monad using a linear congruential
+-- | generator, as well as helper funtions for constructing random generators.
+-- |
+-- | Depending on your underlying monad, stack-safety can be an issue.
+-- | All functions (e.g. `vectorOf`) that do not end with `'` are stack-safe,
+-- | but sometimes this safety is guaranteed via `MonadRec`.
+-- |
+-- | If your underlying monad (e.g. `Aff`) is already stack-safe, you can omit
+-- | this extra constraint and use the variant that ends with `'`
+-- | (e.g. `vectorOf'`).
 module Control.Monad.Gen.Trans
   ( GenState
   , GenT
