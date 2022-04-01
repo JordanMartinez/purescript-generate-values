@@ -178,6 +178,7 @@ resizeGen :: forall a. Int -> Gen a -> Gen a
 resizeGen = resizeGenT
 
 -- | Create a random generator for a function type.
+-- | Note that the `a -> Gen b` cannot run effects.
 repeatable :: forall m a b. Monad m => (a -> Gen b) -> GenT m (a -> b)
 repeatable f = GenT $ StateT \s ->
   pure $ Tuple (\a -> evalGen (f a) s) (s { newSeed = lcgNext s.newSeed })
