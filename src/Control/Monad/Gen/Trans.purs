@@ -378,12 +378,14 @@ randomSample1 gen = do
   evalGenT gen { newSeed: seed, size: 10 }
 
 -- | Sample a random generator, using a randomly generated seed
+-- | Stack-safety is guaranteed via the `MonadRec` constraint
 randomSampleN :: forall m a. MonadRec m => MonadEffect m => Int -> GenT m a -> m (Array a)
 randomSampleN n g = do
   seed <- liftEffect randomSeed
   sample seed n g
 
 -- | Sample a random generator, using a randomly generated seed
+-- | This is only stack-safe if the underlying monad is stack-safe.
 randomSampleN' :: forall m a. MonadEffect m => Int -> GenT m a -> m (Array a)
 randomSampleN' n g = do
   seed <- liftEffect randomSeed
