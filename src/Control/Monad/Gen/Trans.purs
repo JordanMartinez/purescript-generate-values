@@ -44,7 +44,6 @@ module Control.Monad.Gen.Trans
   , uniform
   , sample
   , sample'
-  , randomSample
   , randomSample1
   , randomSampleN
   , randomSampleN'
@@ -389,10 +388,6 @@ randomSampleN' :: forall m a. MonadEffect m => Int -> GenT m a -> m (Array a)
 randomSampleN' n g = do
   seed <- liftEffect randomSeed
   sample' seed n g
-
--- | Get a random sample of 10 values. For a single value, use `randomSampleOne`.
-randomSample :: forall m a. MonadRec m => MonadEffect m => GenT m a -> m (Array a)
-randomSample = randomSampleN' 10
 
 -- | A random generator which simply outputs the current seed
 lcgStep :: forall m. Monad m => GenT m Int
