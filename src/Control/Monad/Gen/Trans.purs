@@ -333,11 +333,11 @@ listOf' :: forall m a. Monad m => Int -> GenT m a -> GenT m (List a)
 listOf' total gen
   | total <= 0 = pure Nil
   | otherwise = replicateM Nil total
-  where
-  replicateM acc 0 = pure acc
-  replicateM acc k = do
-    a <- gen
-    replicateM (Cons a acc) (k - 1)
+      where
+      replicateM acc 0 = pure acc
+      replicateM acc k = do
+        a <- gen
+        replicateM (Cons a acc) (k - 1)
 
 -- | Create a random generator which generates a vector of random values of a specified size.
 -- | Stack-safety is guaranteed via the `MonadRec` constraint
