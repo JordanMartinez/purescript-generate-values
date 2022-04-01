@@ -23,20 +23,27 @@ module Control.Monad.Gen.Trans
   , stateful
   , variant
   , suchThat
+  , suchThat'
   , sized
   , choose
   , chooseInt
   , oneOf
   , frequency
   , arrayOf
+  , arrayOf'
   , arrayOf1
+  , arrayOf1'
   , enum
   , listOf
+  , listOf'
   , vectorOf
+  , vectorOf'
   , elements
   , shuffle
+  , shuffle'
   , uniform
   , sample
+  , sample'
   , randomSample
   , randomSample'
   , randomSampleOne
@@ -177,6 +184,7 @@ variant n g = GenT $ StateT \s -> runGenT g s { newSeed = n }
 
 -- | Ensure that a generator only produces values that match a predicate. If
 -- | the predicate always returns false the generator will loop forever.
+-- | Stack-safety is guaranteed via the `MonadRec` constraint
 suchThat :: forall m a. MonadRec m => GenT m a -> (a -> Boolean) -> GenT m a
 suchThat gen pred = tailRecM go unit
   where
@@ -184,6 +192,17 @@ suchThat gen pred = tailRecM go unit
   go _ = do
     a <- gen
     pure if pred a then Done a else Loop unit
+
+-- | Ensure that a generator only produces values that match a predicate. If
+-- | the predicate always returns false the generator will loop forever.
+-- | This is only stack-safe if the underlying monad is stack-safe.
+suchThat' :: forall m a. Monad m => GenT m a -> (a -> Boolean) -> GenT m a
+suchThat' gen pred = go
+  where
+  go ::GenT m a
+  go = do
+    a <- gen
+    if pred a then pure a else go
 
 -- | Create a random generator which depends on the size parameter.
 sized :: forall m a. (Int -> GenT m a) -> GenT m a
@@ -246,17 +265,35 @@ frequency xxs =
     pick 0 n
 
 -- | Create a random generator which generates an array of random values.
+-- | Stack-safety is guaranteed via the `MonadRec` constraint
 arrayOf :: forall m a. MonadRec m => GenT m a -> GenT m (Array a)
 arrayOf g = sized $ \n -> do
   k <- chooseInt zero n
   vectorOf k g
 
+-- | Create a random generator which generates an array of random values.
+-- | This is only stack-safe if the underlying monad is stack-safe.
+arrayOf' :: forall m a. Monad m => GenT m a -> GenT m (Array a)
+arrayOf' g = sized $ \n -> do
+  k <- chooseInt zero n
+  vectorOf' k g
+
 -- | Create a random generator which generates a non-empty array of random values.
+-- | Stack-safety is guaranteed via the `MonadRec` constraint
 arrayOf1 :: forall m a. MonadRec m => GenT m a -> GenT m (NonEmptyArray a)
 arrayOf1 g = sized $ \n -> do
   k <- chooseInt zero n
   x <- g
   xs <- vectorOf (k - one) g
+  pure $ unsafePartial fromJust $ NEA.fromArray $ x : xs
+
+-- | Create a random generator which generates a non-empty array of random values.
+-- | This is only stack-safe if the underlying monad is stack-safe.
+arrayOf1' :: forall m a. Monad m => GenT m a -> GenT m (NonEmptyArray a)
+arrayOf1' g = sized $ \n -> do
+  k <- chooseInt zero n
+  x <- g
+  xs <- vectorOf' (k - one) g
   pure $ unsafePartial fromJust $ NEA.fromArray $ x : xs
 
 -- | Create a random generator for a finite enumeration.
@@ -268,6 +305,7 @@ enum = do
   i <- chooseInt (fromEnum (bottom :: a)) (fromEnum (top :: a))
   pure (unsafePartial $ fromJust $ toEnum i)
 
+-- | Stack-safety is guaranteed via the `MonadRec` constraint
 replicateMRec :: forall m a. MonadRec m => Int -> m a -> m (List a)
 replicateMRec k _ | k <= 0 = pure Nil
 replicateMRec k gen = tailRecM go (Tuple Nil k)
@@ -277,12 +315,30 @@ replicateMRec k gen = tailRecM go (Tuple Nil k)
   go (Tuple acc n) = gen <#> \x -> Loop (Tuple (Cons x acc) (n - 1))
 
 -- | Create a random generator which generates a list of random values of the specified size.
+-- | Stack-safety is guaranteed via the `MonadRec` constraint
 listOf :: forall m a. MonadRec m => Int -> GenT m a -> GenT m (List a)
 listOf = replicateMRec
 
+-- | Create a random generator which generates a list of random values of the specified size.
+-- | This is only stack-safe if the underlying monad is stack-safe.
+listOf' :: forall m a. Monad m => Int -> GenT m a -> GenT m (List a)
+listOf' total gen = if total <= 0 then pure Nil
+  else replicateM Nil total
+  where
+  replicateM acc 0 = pure acc
+  replicateM acc k = do
+    a <- gen
+    replicateM (Cons a acc) (k - 1)
+
 -- | Create a random generator which generates a vector of random values of a specified size.
+-- | Stack-safety is guaranteed via the `MonadRec` constraint
 vectorOf :: forall m a. MonadRec m => Int -> GenT m a -> GenT m (Array a)
 vectorOf k g = toUnfoldable <$> listOf k g
+
+-- | Create a random generator which generates a vector of random values of a specified size.
+-- | This is only stack-safe if the underlying monad is stack-safe.
+vectorOf' :: forall m a. Monad m => Int -> GenT m a -> GenT m (Array a)
+vectorOf' k g = toUnfoldable <$> listOf' k g
 
 -- | Create a random generator which selects a value from a non-empty array with
 -- | uniform probability.
@@ -292,14 +348,28 @@ elements xs = do
   pure $ unsafePartial $ NEA.unsafeIndex xs n
 
 -- | Generate a random permutation of the given array
+-- | Stack-safety is guaranteed via the `MonadRec` constraint
 shuffle :: forall m a. MonadRec m => Array a -> GenT m (Array a)
 shuffle xs = do
   ns <- vectorOf (length xs) (chooseInt 0 top)
   pure (map snd (sortBy (comparing fst) (zip ns xs)))
 
+-- | Generate a random permutation of the given array
+-- | This is only stack-safe if the underlying monad is stack-safe.
+shuffle' :: forall m a. Monad m => Array a -> GenT m (Array a)
+shuffle' xs = do
+  ns <- vectorOf' (length xs) (chooseInt 0 top)
+  pure (map snd (sortBy (comparing fst) (zip ns xs)))
+
 -- | Sample a random generator
+-- | Stack-safety is guaranteed via the `MonadRec` constraint
 sample :: forall m a. MonadRec m => Seed -> Int -> GenT m a -> m (Array a)
 sample seed sz g = evalGenT (vectorOf sz g) { newSeed: seed, size: sz }
+
+-- | Sample a random generator
+-- | This is only stack-safe if the underlying monad is stack-safe.
+sample' :: forall m a. Monad m => Seed -> Int -> GenT m a -> m (Array a)
+sample' seed sz g = evalGenT (vectorOf' sz g) { newSeed: seed, size: sz }
 
 -- | Generate a single value using a randomly generated seed.
 randomSampleOne :: forall m a. MonadEffect m => GenT m a -> m a
