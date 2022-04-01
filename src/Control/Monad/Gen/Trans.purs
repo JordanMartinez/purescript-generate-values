@@ -45,8 +45,9 @@ module Control.Monad.Gen.Trans
   , sample
   , sample'
   , randomSample
-  , randomSample'
-  , randomSampleOne
+  , randomSample1
+  , randomSampleN
+  , randomSampleN'
   ) where
 
 import Prelude
@@ -372,20 +373,26 @@ sample' :: forall m a. Monad m => Seed -> Int -> GenT m a -> m (Array a)
 sample' seed sz g = evalGenT (vectorOf' sz g) { newSeed: seed, size: sz }
 
 -- | Generate a single value using a randomly generated seed.
-randomSampleOne :: forall m a. MonadEffect m => GenT m a -> m a
-randomSampleOne gen = do
+randomSample1 :: forall m a. MonadEffect m => GenT m a -> m a
+randomSample1 gen = do
   seed <- liftEffect randomSeed
   evalGenT gen { newSeed: seed, size: 10 }
 
 -- | Sample a random generator, using a randomly generated seed
-randomSample' :: forall m a. MonadRec m => MonadEffect m => Int -> GenT m a -> m (Array a)
-randomSample' n g = do
+randomSampleN :: forall m a. MonadRec m => MonadEffect m => Int -> GenT m a -> m (Array a)
+randomSampleN n g = do
   seed <- liftEffect randomSeed
   sample seed n g
 
+-- | Sample a random generator, using a randomly generated seed
+randomSampleN' :: forall m a. MonadEffect m => Int -> GenT m a -> m (Array a)
+randomSampleN' n g = do
+  seed <- liftEffect randomSeed
+  sample' seed n g
+
 -- | Get a random sample of 10 values. For a single value, use `randomSampleOne`.
 randomSample :: forall m a. MonadRec m => MonadEffect m => GenT m a -> m (Array a)
-randomSample = randomSample' 10
+randomSample = randomSampleN' 10
 
 -- | A random generator which simply outputs the current seed
 lcgStep :: forall m. Monad m => GenT m Int
