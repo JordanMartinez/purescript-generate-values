@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.Gen.Class (chooseInt)
 import Control.Monad.Gen.Class as MGen
-import Control.Monad.Gen.Trans (Gen, evalGen, randomSample, randomSample', resizeGen, sized, vectorOf)
+import Control.Monad.Gen.Trans (Gen, evalGen, randomSampleN, resizeGen, sized, vectorOf)
 import Data.Array (all)
 import Data.Array.Partial (head)
 import Data.Foldable (sum)
@@ -45,10 +45,10 @@ main = do
   logShow =<< go 100000
 
   log "Checking that chooseFloat over the whole Number range always yields a finite value"
-  randomSample (MGen.chooseFloat ((-1.7976931348623157e+308)) (1.7976931348623157e+308)) >>= assert <<< all isFinite
+  randomSampleN 10 (MGen.chooseFloat ((-1.7976931348623157e+308)) (1.7976931348623157e+308)) >>= assert <<< all isFinite
 
   where
-  go n = map (sum <<< unsafeHead) $ randomSample' 1 (vectorOf n (chooseInt bottom top))
+  go n = map (sum <<< unsafeHead) $ randomSampleN 1 (vectorOf n (chooseInt bottom top))
 
   unsafeHead :: forall x. Array x -> x
   unsafeHead xs = unsafePartial (head xs)
