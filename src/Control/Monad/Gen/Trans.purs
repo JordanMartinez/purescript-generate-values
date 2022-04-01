@@ -286,7 +286,7 @@ vectorOf k g = toUnfoldable <$> listOf k g
 
 -- | Create a random generator which selects a value from a non-empty array with
 -- | uniform probability.
-elements :: forall m a. MonadRec m => NonEmptyArray a -> GenT m a
+elements :: forall m a. Monad m => NonEmptyArray a -> GenT m a
 elements xs = do
   n <- chooseInt zero (NEA.length xs - one)
   pure $ unsafePartial $ NEA.unsafeIndex xs n
