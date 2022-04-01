@@ -23,13 +23,12 @@ jobs:
       - name: Install dependencies
         run: |
           npm install -g bower
-          npm install
           bower install --production
 
       - name: Build source
-        run: npm run-script build
+        run: pulp build
 
       - name: Run tests
         run: |
           bower install
-          npm run-script test --if-present
+          pulp test
