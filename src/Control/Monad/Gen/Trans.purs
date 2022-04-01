@@ -247,17 +247,17 @@ frequency xxs =
 
 -- | Create a random generator which generates an array of random values.
 arrayOf :: forall m a. MonadRec m => GenT m a -> GenT m (Array a)
-arrayOf g = sized $ \n ->
-  do k <- chooseInt zero n
-     vectorOf k g
+arrayOf g = sized $ \n -> do
+  k <- chooseInt zero n
+  vectorOf k g
 
 -- | Create a random generator which generates a non-empty array of random values.
 arrayOf1 :: forall m a. MonadRec m => GenT m a -> GenT m (NonEmptyArray a)
-arrayOf1 g = sized $ \n ->
-  do k <- chooseInt zero n
-     x <- g
-     xs <- vectorOf (k - one) g
-     pure $ unsafePartial fromJust $ NEA.fromArray $ x : xs
+arrayOf1 g = sized $ \n -> do
+  k <- chooseInt zero n
+  x <- g
+  xs <- vectorOf (k - one) g
+  pure $ unsafePartial fromJust $ NEA.fromArray $ x : xs
 
 -- | Create a random generator for a finite enumeration.
 -- | `toEnum i` must be well-behaved:
