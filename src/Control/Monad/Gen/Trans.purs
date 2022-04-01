@@ -10,7 +10,7 @@
 -- | (e.g. `vectorOf'`).
 module Control.Monad.Gen.Trans
   ( GenState
-  , GenT
+  , GenT(..)
   , runGenT
   , runGenT'
   , withGenT
