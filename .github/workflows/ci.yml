@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install -g bower
+          npm install -g bower pulp@16.0.0-0
           bower install --production
 
       - name: Build source
