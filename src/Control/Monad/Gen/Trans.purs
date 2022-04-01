@@ -87,7 +87,7 @@ import Random.LCG (Seed, lcgPerturb, lcgM, lcgNext, unSeed, randomSeed)
 -- |
 -- | ## The `size` label
 -- |
--- | Tests are parameterized by the `Size` of the randomly-generated data,
+-- | Tests are parameterized by the `size` of the randomly-generated data,
 -- | the meaning of which depends on the particular generator used.
 type GenState = { newSeed :: Seed, size :: Int }
 
