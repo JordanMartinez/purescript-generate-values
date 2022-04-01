@@ -145,7 +145,7 @@ perturbGenT n gen = GenT do
 -- | Modify a random generator by setting a new size parameter.
 resizeGenT :: forall m a. Monad m => Int -> GenT m a -> GenT m a
 resizeGenT sz g = GenT $ StateT \{ newSeed, size } ->
-  (map _ {size = size} ) <$> runGenT g { newSeed, size: sz}
+  (map _ { size = size }) <$> runGenT g { newSeed, size: sz }
 
 type Gen a = GenT Identity a
 
@@ -208,7 +208,7 @@ suchThat gen pred = tailRecM go unit
 suchThat' :: forall m a. Monad m => GenT m a -> (a -> Boolean) -> GenT m a
 suchThat' gen pred = go
   where
-  go ::GenT m a
+  go :: GenT m a
   go = do
     a <- gen
     if pred a then pure a else go
@@ -237,18 +237,18 @@ chooseInt a b = if a <= b then chooseInt' a b else chooseInt' b a
 chooseInt' :: forall m. Monad m => Int -> Int -> GenT m Int
 chooseInt' a b = floor <<< clamp <$> choose32BitPosNumber
   where
-    choose32BitPosNumber :: GenT m Number
-    choose32BitPosNumber =
-      (+) <$> choose31BitPosNumber <*> (((*) 2.0) <$> choose31BitPosNumber)
+  choose32BitPosNumber :: GenT m Number
+  choose32BitPosNumber =
+    (+) <$> choose31BitPosNumber <*> (((*) 2.0) <$> choose31BitPosNumber)
 
-    choose31BitPosNumber :: GenT m Number
-    choose31BitPosNumber = toNumber <$> lcgStep
+  choose31BitPosNumber :: GenT m Number
+  choose31BitPosNumber = toNumber <$> lcgStep
 
-    clamp :: Number -> Number
-    clamp x = numA + (x % (numB - numA + one))
+  clamp :: Number -> Number
+  clamp x = numA + (x % (numB - numA + one))
 
-    numA = toNumber a
-    numB = toNumber b
+  numA = toNumber a
+  numB = toNumber b
 
 -- | Create a random generator which selects and executes a random generator from
 -- | a non-empty array of random generators with uniform probability.
@@ -260,7 +260,7 @@ oneOf xs = do
 -- | Create a random generator which selects and executes a random generator from
 -- | a non-empty, weighted list of random generators.
 frequency :: forall m a. Monad m => NonEmptyArray (Tuple Number (GenT m a)) -> GenT m a
-frequency xxs =
+frequency xxs = do
   let
     default = snd $ NEA.head xxs
     total = unwrap $ foldMap1 (Additive <<< fst) xxs
@@ -269,9 +269,8 @@ frequency xxs =
       Just (Tuple k x')
         | n <= k -> x'
         | otherwise -> pick (i + 1) (n - k)
-  in do
-    n <- choose zero total
-    pick 0 n
+  n <- choose zero total
+  pick 0 n
 
 -- | Create a random generator which generates an array of random values.
 -- | Stack-safety is guaranteed via the `MonadRec` constraint
@@ -331,8 +330,9 @@ listOf = replicateMRec
 -- | Create a random generator which generates a list of random values of the specified size.
 -- | This is only stack-safe if the underlying monad is stack-safe.
 listOf' :: forall m a. Monad m => Int -> GenT m a -> GenT m (List a)
-listOf' total gen = if total <= 0 then pure Nil
-  else replicateM Nil total
+listOf' total gen
+  | total <= 0 = pure Nil
+  | otherwise = replicateM Nil total
   where
   replicateM acc 0 = pure acc
   replicateM acc k = do
@@ -402,7 +402,8 @@ randomSampleN' n g = do
 
 -- | A random generator which simply outputs the current seed
 lcgStep :: forall m. Monad m => GenT m Int
-lcgStep = GenT $ state f where
+lcgStep = GenT $ state f
+  where
   f s = Tuple (unSeed s.newSeed) (s { newSeed = lcgNext s.newSeed })
 
 -- | A random generator which approximates a uniform random variable on `[0, 1]`
