@@ -12,27 +12,24 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - uses: actions/setup-node@v1
+        with:
+          node-version: "22"
+
       - uses: purescript-contrib/setup-purescript@main
         with:
           purescript: "unstable"
           purs-tidy: "latest"
-
-      - uses: actions/setup-node@v1
-        with:
-          node-version: "12"
+          spago: "1.0.5"
 
       - name: Install dependencies
-        run: |
-          npm install -g bower pulp@16.0.0-0
-          bower install --production
+        run: spago install
 
       - name: Build source
-        run: pulp build
+        run: spago build
 
       - name: Run tests
-        run: |
-          bower install
-          pulp test
+        run: spago test
 
       - name: Check formatting
         run: purs-tidy check src test
